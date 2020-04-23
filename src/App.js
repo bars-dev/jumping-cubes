@@ -1,40 +1,12 @@
-import React from 'react';
-import './App.css';
-
-class Die extends React.Component {
-    render() {
-        const dots = this.makeDieShape(this.props.numDots);
-        return (
-            <div className="die" onClick={this.props.clickAction}>
-                <svg width="100%" viewBox="0 0 100 100" className="dieSvg">
-                    <rect x="5" y="5" rx="10" ry="10" width="90" height="90" style={{fill: "white", stroke: "black"}}/>
-                    {dots}
-                </svg>
-            </div>
-        )
-    }
-
-    makeDieShape(numDots) {
-        let dots = [];
-        if (numDots % 2 === 1) {
-            dots.push(<circle key={this.props.id + "centreCircle"} cx={50} cy={50} r={10}
-                              fill={this.props.colour || "black"}/>);
-        }
-        if (numDots >= 2) {
-            dots.push(<circle key={this.props.id + "topLeftCircle"} cx={25} cy={25} r={10}
-                              fill={this.props.colour || "black"}/>);
-            dots.push(<circle key={this.props.id + "bottomRightCircle"} cx={75} cy={75} r={10}
-                              fill={this.props.colour || "black"}/>);
-        }
-        if (numDots >= 4) {
-            dots.push(<circle key={this.props.id + "bottomLeftCircle"} cx={75} cy={25} r={10}
-                              fill={this.props.colour || "black"}/>);
-            dots.push(<circle key={this.props.id + "topRightCircle"} cx={25} cy={75} r={10}
-                              fill={this.props.colour || "black"}/>);
-        }
-        return dots;
-    }
-}
+import React from "react";
+import "./App.css";
+import {AppBar, Button, Grid, IconButton, Toolbar, Typography} from "@material-ui/core";
+import Board from "./components/Board"
+import GameControl from "./components/GameControl";
+import MenuIcon from "@material-ui/icons/Menu"
+import Drawer from "@material-ui/core/Drawer";
+import CurrentPlayerNotice from "./components/CurrentPlayerNotice";
+import Hidden from "@material-ui/core/Hidden";
 
 function isNotUnTruthy(values) {
     for (let i of values) {
@@ -45,149 +17,19 @@ function isNotUnTruthy(values) {
     return false;
 }
 
-class Board extends React.Component {
-    render() {
-        //Populate dice into display
-        let finalArray = [];
-        for (let j = 0; j < this.props.numDice; j++) {
-            let dieArray = [];
-            for (let i = j * this.props.numDice; i < (j + 1) * this.props.numDice; i++) {
-                dieArray.push(this.renderDie(i));
-            }
-            finalArray.push(<div className="dieRow" key={"dieArray" + j}>{dieArray}</div>);
-        }
-        return finalArray;
-    }
-
-    renderDie(i) {
-        return (
-            <div key={"dieDiv" + i}>
-                <Die key={i} id={i} colour={this.props.teamColour[i]} numDots={this.props.numDots[i]}
-                     clickAction={() => this.props.onDieClick(i)}/>
-            </div>
-        )
-    }
-}
-
-class GameControl extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            addPlayer: false,
-        }
-    }
-
-    addPlayer() {
-        if (this.state.addPlayer) {
-            return (
-                <div className="modal">
-                    <div className="modal-content">
-                        <AddPlayerForm cancel={this.toggleAddPlayer.bind(this)}
-                                       notifyOfSubmission={this.processNewPlayerSuggestion.bind(this)}/>
-                    </div>
-                </div>
-            );
-        } else {
-            return null;
-        }
-    }
-
-    renderPlayerList() {
-        const playerList = [];
-        for (let player of this.props.players) {
-            playerList.push(<li key={"playerControl" + player.name} style={{color: player.colour}}>{player.name}</li>);
-        }
-        return (<div>
-            <ul className="player-list">{playerList}</ul>
-            <button onClick={() => this.toggleAddPlayer()}>Add player</button>
-        </div>)
-    }
-
-    processNewPlayerSuggestion = (name, colour) => {
-        for (let player of this.props.players) {
-            if (name === player.name || colour === player.colour) {
-                return false;
-            }
-        }
-        this.props.notifyOfNewPlayer(name, colour);
-        this.toggleAddPlayer();
-        return true;
-    };
-
-    render() {
-        return (
-            <div>
-                {this.renderPlayerList()}
-                {this.addPlayer()}
-            </div>
-        );
-    }
-
-    toggleAddPlayer() {
-        this.setState({addPlayer: !this.state.addPlayer});
-    }
-}
-
-class AddPlayerForm extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state = {name: '', colour: ''};
-        this.handleNameChange = this.handleNameChange.bind(this);
-        this.handleColourChange = this.handleColourChange.bind(this);
-        this.notifyParent = (name, colour) => this.props.notifyOfSubmission(name, colour);
-        this.cancel = () => this.props.cancel();
-    }
-
-    handleNameChange(event) {
-        this.setState({name: event.target.value});
-    }
-
-    handleColourChange(event) {
-        this.setState({colour: event.target.value});
-    }
-
-    handleSubmit(event) {
-        if (this.notifyParent(this.state.name, this.state.colour)) {
-            this.setState({name: '', colour: ''});
-        }
-        event.preventDefault();
-    }
-
-    render() {
-        return (
-            <form onSubmit={(event) => this.handleSubmit(event)}>
-                <div id="flexTable" className="flexTable">
-                    <label>
-                        Name: <input type="text"
-                                     value={this.state.name}
-                                     onChange={(event) => this.handleNameChange(event)}
-                                     required/>
-                    </label>
-                    <label>
-                        Colour: <input type="color"
-                                       value={this.state.colour}
-                                       onChange={(event) => this.handleColourChange(event)}
-                                       required/>
-                    </label>
-                </div>
-                <input type="submit" value="Submit"/>
-                <button onClick={() => this.cancel()}>Cancel</button>
-            </form>
-        );
-    }
-}
-
 class App extends React.Component {
+
     constructor(props) {
         super(props);
         this.state = {
-            players: [{"name": "red", "colour": "red"},
-                {"name": "blue", "colour": "blue"}],
+            players: [{"name": "Red", "colour": "red"},
+                {"name": "Blue", "colour": "blue"}],
             teamColour: Array(3 ** 2).fill(null),
             numDots: Array(3 ** 2).fill(1),
             numDice: 3,
             currentTurn: 0,
             gameOver: false,
+            drawerOpen: false,
         };
     };
 
@@ -210,6 +52,11 @@ class App extends React.Component {
         this.setState({players: newPlayers});
         this.resetBoard();
     };
+
+    processGridResize(number) {
+        this.setState({numDice: number});
+        this.resetBoard(number);
+    }
 
     onDieClick(i) {
         if ((this.state.teamColour[i] !== this.state.players[this.state.currentTurn].colour && this.state.teamColour[i] !== null) || this.state.gameOver) {
@@ -309,13 +156,23 @@ class App extends React.Component {
         }
     }
 
-    resetBoard() {
-        this.setState({
-            teamColour: Array(this.state.numDice ** 2).fill(null),
-            numDots: Array(this.state.numDice ** 2).fill(1),
-            currentTurn: 0,
-            gameOver: false,
-        });
+    resetBoard(numDice) {
+        if (numDice !== undefined && numDice > 1) {
+            this.setState({
+                teamColour: Array(numDice ** 2).fill(null),
+                numDots: Array(numDice ** 2).fill(1),
+                currentTurn: 0,
+                gameOver: false,
+            });
+
+        } else {
+            this.setState({
+                teamColour: Array(this.state.numDice ** 2).fill(null),
+                numDots: Array(this.state.numDice ** 2).fill(1),
+                currentTurn: 0,
+                gameOver: false,
+            });
+        }
     }
 
     playerIsEliminated(i, newTeamColour) {
@@ -327,41 +184,111 @@ class App extends React.Component {
         return true;
     }
 
+    toggleDrawer(value) {
+        this.setState({drawerOpen: value});
+        this.resetBoard();
+    }
+
+    getDrawer() {
+        return (
+            <nav>
+                <Hidden xsDown>
+                    <Drawer anchor={"left"}
+                            variant="permanent"
+                            open={this.state.drawerOpen}
+                            onClose={() => this.toggleDrawer(false)}
+                    >
+                        <GameControl key="gameControl"
+                                     notifyOfNewPlayer={this.processNewPlayer.bind(this)}
+                                     numDice={this.state.numDice}
+                                     players={this.state.players}
+                                     teamColour={this.state.teamColour}
+                                     currentTurn={this.state.currentTurn}
+                                     numDots={this.state.numDots}
+                                     removePlayer={(i) => this.removePlayer(i)}
+                                     processNewGridSize={(number) => this.processGridResize(number)}
+                        />
+                    </Drawer>
+                </Hidden>
+                <Hidden smUp>
+                    <Drawer anchor={"left"}
+                            variant="temporary"
+                            open={this.state.drawerOpen}
+                            onClose={() => this.toggleDrawer(false)}
+                    >
+                        <GameControl key="gameControl"
+                                     notifyOfNewPlayer={this.processNewPlayer.bind(this)}
+                                     numDice={this.state.numDice}
+                                     players={this.state.players}
+                                     teamColour={this.state.teamColour}
+                                     currentTurn={this.state.currentTurn}
+                                     numDots={this.state.numDots}
+                                     removePlayer={(i) => this.removePlayer(i)}
+                                     processNewGridSize={(number) => this.processGridResize(number)}
+                        />
+                    </Drawer>
+                </Hidden>
+            </nav>
+        )
+    }
+
+    menuButton() {
+        return (
+            <IconButton edge="start" color="inherit" aria-label="menu">
+                <React.Fragment key={"left"}>
+                    <MenuIcon onClick={() => this.toggleDrawer(true)}/>
+                </React.Fragment>
+            </IconButton>
+        )
+    }
+
+    removePlayer(player) {
+        if (this.state.players.length > 1) {
+            let playerList = this.state.players.slice();
+            playerList.splice(playerList.indexOf(player), 1)
+            this.setState({players: playerList})
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     render() {
         let finalArray = [];
         //Populate the current player/victory notice
         if (this.state.gameOver) {
             finalArray.push(<p key={"victoryNotice"}>The {this.state.teamColour[0]} player is the winner!</p>);
-        } else {
-            finalArray.push(<p key={"currentPlayerNotice"}>The current player
-                is: {this.state.currentTurn}, {this.state.players[this.state.currentTurn].name}</p>);
         }
         //Reset button for the game board
-        finalArray.push(<button onClick={() => this.resetBoard()} key="reset">Reset</button>);
+        finalArray.push(<Button onClick={() => this.resetBoard()} key="reset" variant="outlined"
+                                color="primary">Reset</Button>);
+
 
         return (
-            <div className="App">
-                <div className="boardDiv">
-                    <Board key="board"
-                           numDice={this.state.numDice}
-                           onDieClick={(i) => this.onDieClick(i)}
-                           teamColour={this.state.teamColour}
-                           numDots={this.state.numDots}
+            <div>
+                {this.getDrawer()}
+                <AppBar position="static">
+                    <Toolbar>
+                        {this.menuButton()}
+                        <Typography variant="h6">
+                            Jumping Cubes
+                        </Typography>
+                    </Toolbar>
+                </AppBar>
+                <Grid container direction="column" alignItems="center" justify="center">
+                    <Board
+                        key="board"
+                        numDice={this.state.numDice}
+                        onDieClick={(i) => this.onDieClick(i)}
+                        teamColour={this.state.teamColour}
+                        numDots={this.state.numDots}
                     />
-                </div>
-                <div className="gameControlDiv">
-                    <GameControl key="gameControl"
-                                 notifyOfNewPlayer={this.processNewPlayer.bind(this)}
-                                 numDice={this.state.numDice}
-                                 players={this.state.players}
-                                 teamColour={this.state.teamColour}
-                                 currentTurn={this.state.currentTurn}
-                                 numDots={this.state.numDots}
-                    />
-                </div>
-                <div>
+                    <CurrentPlayerNotice
+                        singular={true}
+                        players={this.state.players}
+                        currentPlayer={this.state.players[this.state.currentTurn]}/>
                     {finalArray}
-                </div>
+                </Grid>
             </div>
         );
     };

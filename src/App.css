@@ -93,3 +93,7 @@ ul.player-list {
 ul.player-list li::before {
   content: "\200B";
 }
+
+.drawerNav {
+  min-width: 300px;
+}
